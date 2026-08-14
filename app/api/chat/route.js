@@ -3,7 +3,6 @@ import OpenAI from "openai"; // <- ADD THIS
 import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
 import personaModule from "@/module/persona";
-import { status } from "init";
 import { connectDB } from "@/lib/db";
 
 export async function GET(req) {
