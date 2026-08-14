@@ -1,26 +1,374 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --color-surface-0: #08090c; /* app background */
+  --color-surface-1: #0e1015; /* raised panel */
+  --color-surface-2: #14161d; /* card */
+  --color-surface-3: #1b1e27; /* hover/elevated */
+
+  /* Text */
+  --color-text-primary: #f2f3f5;
+  --color-text-secondary: #a1a5b0;
+  --color-text-tertiary: #6b6f7a;
+
+  /* Borders */
+  --color-border-subtle: rgba(255, 255, 255, 0.07);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+
+  /* Accent — single indigo, used sparingly */
+  --color-accent: #6366f1;
+  --color-accent-hover: #7476f4;
+  --color-accent-muted: rgba(99, 102, 241, 0.12);
+  --color-on-accent: #ffffff;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  --background: var(--color-surface-0);
+  --foreground: var(--color-text-primary);
+
+  /* ----------------------------------------------------------------
+     Landing palette — a separate, light "mineral" system used only by
+     the marketing page (`.pl`). The product app keeps the dark
+     surface and text tokens above, so these are additive and safe.
+
+     Rules of the palette:
+       ink     — every text colour and every button on light ground
+       signal  — marigold. Only ever marks the thing to work on:
+                 target markers, the coached skill, the loop pulse.
+                 Never used as text on a light background (too low
+                 contrast) — fills and ink-backgrounds only.
+       gain    — evergreen. Only ever marks improvement.
+     ---------------------------------------------------------------- */
+  --color-pl-ground: #e4eae5;
+  --color-pl-raised: #eff3ef;
+  --color-pl-white: #ffffff;
+  --color-pl-sunken: #dce0da;
+  --color-pl-ink: #0e1a16;
+  --color-pl-ink-2: #17241f;
+  --color-pl-body: #45524c;
+  --color-pl-mute: #626e67;
+  --color-pl-rule: rgba(14, 26, 22, 0.12);
+  --color-pl-rule-2: rgba(14, 26, 22, 0.26);
+  --color-pl-signal: #e0a020;
+  --color-pl-signal-2: #a8720a;
+  --color-pl-gain: #2c8f65;
+  /* Form errors need to be unmistakable, and marigold is already spoken
+     for. A deep clay red — the one hue added for /signup. */
+  --color-pl-alert: #b3341e;
+  --color-pl-onink: #e6eae5;
+  --color-pl-onink-2: rgba(230, 234, 229, 0.62);
+  --color-pl-onink-3: rgba(230, 234, 229, 0.34);
+  --color-pl-inkrule: rgba(230, 234, 229, 0.16);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-0: var(--color-surface-0);
+  --color-surface-1: var(--color-surface-1);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-tertiary);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-default: var(--color-border-default);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-muted: var(--color-accent-muted);
+  --color-on-accent: var(--color-on-accent);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Landing palette (see below) */
+  --color-pl-ground: var(--color-pl-ground);
+  --color-pl-raised: var(--color-pl-raised);
+  --color-pl-white: var(--color-pl-white);
+  --color-pl-sunken: var(--color-pl-sunken);
+  --color-pl-ink: var(--color-pl-ink);
+  --color-pl-ink-2: var(--color-pl-ink-2);
+  --color-pl-body: var(--color-pl-body);
+  --color-pl-mute: var(--color-pl-mute);
+  --color-pl-rule: var(--color-pl-rule);
+  --color-pl-rule-2: var(--color-pl-rule-2);
+  --color-pl-signal: var(--color-pl-signal);
+  --color-pl-signal-2: var(--color-pl-signal-2);
+  --color-pl-gain: var(--color-pl-gain);
+  --color-pl-alert: var(--color-pl-alert);
+  --color-pl-onink: var(--color-pl-onink);
+  --color-pl-onink-2: var(--color-pl-onink-2);
+  --color-pl-onink-3: var(--color-pl-onink-3);
+  --color-pl-inkrule: var(--color-pl-inkrule);
+  --font-display: var(--font-archivo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shared depth textures — used sparingly on / and /signup to avoid a flat background */
+
+.bg-grid-fade {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 60% 55% at 50% 0%,
+    black 0%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 0%, black 0%, transparent 75%);
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+.bg-radial-glow {
+  background: radial-gradient(
+    ellipse 55% 50% at 50% -8%,
+    rgba(99, 102, 241, 0.16),
+    transparent 70%
+  );
+}
+
+.bg-radial-glow-soft {
+  background: radial-gradient(
+    ellipse 45% 45% at 100% 0%,
+    rgba(99, 102, 241, 0.1),
+    transparent 70%
+  );
+}
+
+/* Deeper depth textures — used only on /login and /personas, kept separate
+   from the textures above so / and /signup are unaffected. */
+
+.bg-grid-fade-deep {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 0%,
+    black 0%,
+    transparent 80%
+  );
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 0%, transparent 80%);
+}
+
+.bg-noise-deep {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+.bg-radial-glow-top-deep {
+  background: radial-gradient(
+    ellipse 60% 55% at 50% -10%,
+    rgba(99, 102, 241, 0.26),
+    transparent 70%
+  );
+}
+
+.bg-radial-glow-corner-deep {
+  background: radial-gradient(
+    ellipse 50% 50% at 100% 100%,
+    rgba(99, 102, 241, 0.16),
+    transparent 70%
+  );
+}
+
+/* ==================================================================
+   Landing page ("/") — scoped under .pl so nothing here reaches the
+   dark product pages.
+   ================================================================== */
+
+.pl {
+  color-scheme: light;
+  background: var(--color-pl-ground);
+  color: var(--color-pl-ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Display face: Archivo, pulled wider than default. The width axis is
+   what gives the headings their character — weight alone reads generic. */
+.pl-display {
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-variation-settings: "wdth" 116;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+}
+
+.pl-display-tight {
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-variation-settings: "wdth" 108;
+  letter-spacing: -0.02em;
+}
+
+/* Utility face: mono, for anything that is data — scores, timers,
+   counts, section indices, skill percentages. */
+.pl-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+.pl-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Chrome paints autofilled inputs pale blue, which wrecks the palette.
+   The inset shadow is the only way to override that background. */
+.pl input:-webkit-autofill,
+.pl input:-webkit-autofill:hover,
+.pl input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-pl-white) inset;
+  box-shadow: 0 0 0 1000px var(--color-pl-white) inset;
+  -webkit-text-fill-color: var(--color-pl-ink);
+  caret-color: var(--color-pl-ink);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.pl :focus-visible {
+  outline: 2px solid var(--color-pl-signal-2);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.pl-on-ink :focus-visible {
+  outline-color: var(--color-pl-signal);
+}
+
+/* Objection ticker */
+@keyframes pl-ticker {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.pl-ticker-track {
+  animation: pl-ticker 46s linear infinite;
+  will-change: transform;
+}
+
+.pl-ticker:hover .pl-ticker-track {
+  animation-play-state: paused;
+}
+
+/* Voice level bars in the session console */
+@keyframes pl-level {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.pl-level-bar {
+  transform-origin: center;
+  animation: pl-level 900ms ease-in-out infinite;
+}
+
+/* Live-session indicator */
+@keyframes pl-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.pl-ping {
+  animation: pl-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Signup handoff — the rule that draws while the redirect is pending */
+@keyframes pl-handoff {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.pl-handoff {
+  transform-origin: left;
+  animation: pl-handoff 1s cubic-bezier(0.22, 0.9, 0.24, 1) forwards;
+}
+
+/* The pulse that runs the loop in "How it works" */
+@keyframes pl-loop-pulse {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+.pl-loop-pulse {
+  animation: pl-loop-pulse 9s linear infinite;
+}
+
+/* Decorative loops are switched off here rather than in JS — branching
+   render output on useReducedMotion() breaks hydration. */
+@media (prefers-reduced-motion: reduce) {
+  .pl-ticker-track,
+  .pl-level-bar,
+  .pl-loop-pulse,
+  .pl-ping,
+  .pl-handoff {
+    animation: none !important;
+  }
+  .pl-handoff {
+    transform: scaleX(1);
+  }
+  .pl-level-bar {
+    transform: scaleY(0.55);
+  }
+  .pl-ping {
+    opacity: 0;
+  }
+  .pl-seg {
+    transition: none !important;
+  }
 }
