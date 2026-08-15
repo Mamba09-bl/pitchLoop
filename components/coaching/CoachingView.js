@@ -279,6 +279,14 @@ export default function CoachingView() {
                         </p>
                       )}
 
+                      {displayStatus === "Not Evaluated" && (
+                        <p className="flex items-center gap-1.5 border-t border-pl-rule pt-4 text-[12.5px] font-medium text-pl-mute">
+                          <MinusCircle className="h-3.5 w-3.5 shrink-0" />
+                          This skill wasn&apos;t demonstrated enough during the calls to evaluate
+                          it — it&apos;s not a mark against your performance.
+                        </p>
+                      )}
+
                       {displayStatus === "Needs Improvement" && (
                         <div className="border-t border-pl-rule pt-4">
                           <Button

@@ -946,7 +946,7 @@ export async function POST(req) {
     const currentStageSuccessCriteria = stage?.successCriteria || "";
 
     const completion = await grook.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",

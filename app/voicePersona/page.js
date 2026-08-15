@@ -11,17 +11,12 @@ export default function PersonasPage() {
     const fetchPersonas = async () => {
       const res = await fetch("/api/personas");
       const result = await res.json();
-      console.log(result);
 
       setPersonas(result?.persona);
     };
 
     fetchPersonas();
   }, []);
-
-  useEffect(() => {
-    console.log(persona?._id);
-  }, [persona]);
 
   const handleStartCall = async (personaId) => {
     const res = await fetch("/api/start-session", {
@@ -34,10 +29,8 @@ export default function PersonasPage() {
         mode: "voice",
       }),
     });
-    console.log("i am id", personaId);
 
     const result = await res.json();
-    console.log(result);
 
     // move to voice page with session + persona
     // router.push(

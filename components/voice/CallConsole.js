@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, PhoneOff, Mic } from "lucide-react";
+import { Phone, PhoneOff, Mic, Volume2, MessageCircle } from "lucide-react";
 
 const EASE = [0.22, 0.9, 0.24, 1];
 
@@ -15,8 +15,8 @@ const PHASE_COPY = {
     body: "Opening the line and syncing the call context.",
   },
   listening: {
-    title: "Listening — go ahead.",
-    body: "Speak naturally, {name} hears you live and will respond by voice.",
+    title: "Listening — you speak first.",
+    body: "{name} won't say anything until they hear you. Say hello, and speak a little louder than usual so the mic picks you up clearly.",
   },
   "user-speaking": {
     title: "You're speaking…",
@@ -206,6 +206,27 @@ export default function CallConsole({
               ))}
             </div>
             <span className="pl-label text-pl-mute">{levelLabel}</span>
+          </div>
+        )}
+
+        {/* Before-you-start notice — the two things sellers miss most often */}
+        {!callActive && (
+          <div className="mt-7 w-full max-w-xs rounded-[6px] border border-pl-ink/15 bg-pl-raised px-4 py-3.5">
+            <p className="pl-label text-pl-ink">Before you start</p>
+            <ul className="mt-2 space-y-2">
+              <li className="flex items-start gap-2.5">
+                <MessageCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pl-ink" />
+                <span className="text-[12px] leading-relaxed text-pl-body">
+                  <strong className="font-semibold text-pl-ink">You speak first</strong> — the buyer stays silent until they hear your voice.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Volume2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pl-ink" />
+                <span className="text-[12px] leading-relaxed text-pl-body">
+                  <strong className="font-semibold text-pl-ink">Speak up</strong> — a bit louder than normal helps the mic hear you clearly.
+                </span>
+              </li>
+            </ul>
           </div>
         )}
 

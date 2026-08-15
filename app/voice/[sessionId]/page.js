@@ -67,7 +67,6 @@ export default function VoicePage() {
     const fetchPersonas = async () => {
       const res = await fetch("/api/allPersona");
       const result = await res.json();
-      console.log(result);
 
       // setPersonas(result?.persona);
     };
@@ -80,10 +79,6 @@ export default function VoicePage() {
       "/freesound_community-shao_isabelle_2014_2015_hangup-104402.mp3",
     );
   }, []);
-
-  useEffect(() => {
-    console.log("instructions", sessionInstructions);
-  }, [sessionInstructions]);
 
   // Call timer — purely presentational, mirrors callActive.
   useEffect(() => {
@@ -101,7 +96,6 @@ export default function VoicePage() {
   const fetchSession = async () => {
     const res = await fetch(`/api/transcribe?sessionId=${sessionId}`);
     const result = await res.json();
-    console.log("i am result", result);
 
     setCurrentStage(result?.currentStage || null);
     setWarnUser(Boolean(result?.warning));
@@ -140,7 +134,6 @@ export default function VoicePage() {
     shouldStreamMicRef.current = false;
     canStreamRef.current = false;
     setCallPhase("processing");
-    console.log("DEBUG 4 → evaluation frontend started");
 
     try {
       const requestOptions = {
@@ -165,8 +158,6 @@ export default function VoicePage() {
       const res = await fetch("/api/transcribe", requestOptions);
       const result = await res.json();
 
-      console.log("DEBUG 6 → backend returned", result);
-
       if (result?.currentStage) {
         setCurrentStage(result.currentStage);
       }
@@ -181,16 +172,6 @@ export default function VoicePage() {
         role: "user",
         text: result?.text || transcriptText,
       });
-
-      console.log({
-        type: "session.update",
-        session: {
-          type: "realtime",
-          instructions: result.instructions,
-        },
-      });
-
-      console.log("DEBUG 7 → sending new instructions", result.currentStage);
 
       if (result?.instructions) {
         setSessionInstructions(result.instructions);
@@ -212,16 +193,11 @@ export default function VoicePage() {
       //   }),
       // );
 
-      console.log("🔥 SENDING RESPONSE.CREATE", {
-        time: Date.now(),
-        source: "evaluateTurnAndRespond",
-      });
       socketRef.current.send(
         JSON.stringify({
           type: "response.create",
         }),
       );
-      console.log("DEBUG 9 → response.create sent");
       return result;
     } finally {
       backendEvaluationInFlightRef.current = false;
@@ -272,7 +248,6 @@ export default function VoicePage() {
     setCallPhase("connecting");
     const instructions = await fetchSession();
 
-    console.log("START CALL INSTRUCTIONSs:", instructions);
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         noiseSuppression: true,
@@ -309,13 +284,11 @@ export default function VoicePage() {
       }
     };
     mediaRecorder.onstop = async () => {
-      console.log("DEBUG 2 → stopping recorder", mediaRecorder.state);
       const audioBlob = new Blob(recordedChunksRef.current, {
         type: "audio/webm",
       });
 
       recordedChunksRef.current = [];
-      console.log("🔥 MEDIA RECORDER ONSTOP", Date.now());
 
       const formData = new FormData();
       formData.append("file", audioBlob, "audio.webm");
@@ -369,8 +342,6 @@ export default function VoicePage() {
     canStreamRef.current = false;
 
     socket.onopen = async () => {
-      console.log("Connected to OpenAI Realtime");
-
       socket.send(
         JSON.stringify({
           type: "session.update",
@@ -440,20 +411,11 @@ export default function VoicePage() {
       const data = JSON.parse(message.data);
 
       if (data.type === "session.updated") {
-        console.log("SESSION UPDATED");
-        console.log("DEBUG 8 → session.updated received");
-        // console.log("ACTIVE INSTRUCTIONS:", data.session.instructions);
-
         canStreamRef.current = true;
         setCallPhase("listening");
       }
 
       if (data.type === "response.created") {
-        console.log("🤖 RESPONSE CREATED:", {
-          responseId: data.response?.id,
-          time: Date.now(),
-        });
-        console.log("DEBUG 10 → response.created");
         responseActiveRef.current = true;
         isAIRespondingRef.current = true;
         setCallPhase("ai-speaking");
@@ -464,7 +426,6 @@ export default function VoicePage() {
         isAIRespondingRef.current = false;
         setCallPhase((p) => (p === "ai-speaking" ? "listening" : p));
       }
-      console.log("EVENT TYPE:", data);
 
       // if (data.type.includes("transcript")) {
       //   console.log("hehe", data);
@@ -479,10 +440,6 @@ export default function VoicePage() {
       }
 
       let silenceTimer;
-
-      if (data.type === "session.created" || data.type === "session.updated") {
-        console.log("SESSION:", data.session);
-      }
 
       if (data.type === "input_audio_buffer.speech_started") {
         clearTimeout(silenceTimerRef.current);
@@ -680,8 +637,6 @@ export default function VoicePage() {
         // Wait 4 seconds before considering the seller's answer finished
         silenceTimeoutRef.current = setTimeout(() => {
           if (mediaRecorder.state === "recording") {
-            console.log("DEBUG 1 → speech_stopped");
-            console.log("speech_stopped", mediaRecorder?.state);
             mediaRecorder.stop();
           }
 
@@ -698,8 +653,6 @@ export default function VoicePage() {
             lastBuyerMessageRef.current = buyerMessage;
           }
         }
-        console.log("transcripttt", buyerMessage);
-        console.log("i am transcript", lastBuyerMessageRef.current);
         startSilenceTimer();
       }
     };

@@ -87,7 +87,6 @@ export default function PracticeView() {
       });
 
       const data = await res.json();
-      console.log("i am data", data);
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Unable to generate scenario");
@@ -193,7 +192,6 @@ export default function PracticeView() {
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Unable to evaluate answer");
       }
-      console.log("secondData", data);
 
       if (data.passed) {
         setStatus("passed");
@@ -228,7 +226,6 @@ export default function PracticeView() {
 
   const handleGenerateAnother = async () => {
     await generateScenario();
-    console.log("hello");
   };
 
   if (loading && !scenario && !error) {

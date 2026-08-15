@@ -300,7 +300,6 @@ export default function ChatPage() {
 
     const result = await res.json();
 
-    console.log(result);
     if (result.sessionEnded) {
       setSessionEnded(true);
       return;
@@ -314,16 +313,10 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    console.log(sessionEnded);
-  }, [sessionEnded]);
-
-  useEffect(() => {
     const fetchpersonas = async () => {
       const res = await fetch("/api/personas");
       const result = await res.json();
       setDetailsPersona(result.persona);
-
-      console.log(result);
     };
     fetchpersonas();
   }, []);
@@ -337,10 +330,6 @@ export default function ChatPage() {
   useEffect(() => {
     fetchSession();
   }, []);
-
-  useEffect(() => {
-    console.log(detailsPersona?._id);
-  }, [detailsPersona]);
 
   // Auto-scroll on new messages
 

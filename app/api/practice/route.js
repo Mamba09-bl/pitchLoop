@@ -109,7 +109,7 @@ export async function POST(req) {
         : null;
 
       const completion = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         temperature: 1.2,
         messages: [
           {
@@ -314,7 +314,7 @@ No extra text.`,
         : null;
       const currentAttempt = session.practice.attempts;
       const completion = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         // temperature: 0.2,
         messages: [
           {

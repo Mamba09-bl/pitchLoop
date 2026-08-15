@@ -1389,7 +1389,6 @@ export default function FeedbackDashboard() {
       const result = await res.json();
       setFeedBack(result.session);
       setLoading(false);
-      console.log(result);
     };
     fetchSession();
   }, []);
