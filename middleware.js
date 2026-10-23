@@ -8,8 +8,13 @@ export async function middleware(req) {
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  if (token) {
+  try {
     await jwtVerify(token, SECRET);
+  } catch {
+    // Expired or tampered token: send to login and clear the bad cookie
+    const res = NextResponse.redirect(new URL("/login", req.url));
+    res.cookies.delete("token");
+    return res;
   }
   return NextResponse.next();
 }

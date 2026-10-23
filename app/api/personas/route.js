@@ -2,14 +2,33 @@ import personasModule from "@/module/persona";
 
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { getUser } from "@/lib/getUser";
+import { isAdmin } from "@/lib/isAdmin";
 
-export async function GET(req) {
+// Read only: returns Michael Thompson for logged-in users
+export async function GET() {
+  const userAuth = await getUser();
+  if (!userAuth || !userAuth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  await connectDB();
+  const persona = await personasModule.findOne({ name: "Michael Thompson" });
+  if (!persona) {
+    return NextResponse.json({ error: "Persona not found" }, { status: 404 });
+  }
+  return NextResponse.json({ persona });
+}
+
+// Admin only: creates Michael Thompson if he doesn't exist yet
+export async function POST(req) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   await connectDB();
   const existingPersona = await personasModule.findOne({
     name: "Michael Thompson",
   });
 
-  console.log(existingPersona);
   if (existingPersona) {
     return NextResponse.json({
       persona: existingPersona,

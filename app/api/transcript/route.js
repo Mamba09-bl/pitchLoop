@@ -3,21 +3,27 @@ import sessionModule from "@/module/session";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getUser } from "@/lib/getUser";
+import { isValidId } from "@/lib/validate";
 
 export async function GET(req) {
   await connectDB();
   const sessionId = req.nextUrl.searchParams.get("sessionId");
   const callNumberParam = req.nextUrl.searchParams.get("callNumber");
 
-  const session = await sessionModule.findById(sessionId);
   const userAuth = await getUser();
+  if (!userAuth || !userAuth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isValidId(sessionId)) {
+    return NextResponse.json({ error: "Invalid session ID" }, { status: 400 });
+  }
   const userId = userAuth.user.id;
-  const ownId = await sessionModule.findOne({
+  const session = await sessionModule.findOne({
     userId: userId,
     _id: sessionId,
   });
-  if (!ownId) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
   const messages = callNumberParam
     ? session.messages.filter(

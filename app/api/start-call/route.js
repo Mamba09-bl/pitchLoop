@@ -3,6 +3,7 @@ import sessionModule from "@/module/session";
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import { connectDB } from "@/lib/db";
+import { isValidId } from "@/lib/validate";
 
 export async function POST(req) {
   await connectDB();
@@ -11,8 +12,15 @@ export async function POST(req) {
   if (!userAuth || !userAuth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!isValidId(id) || !isValidId(personaId)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
+  const userId = userAuth.user.id;
   //   const persona = await personaModule.findById(id);
-  const session = await sessionModule.findById(id);
+  const session = await sessionModule.findOne({ _id: id, userId });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
   const persona = await personaModule.findById(personaId);
 
   // if (session.status === "completed") {

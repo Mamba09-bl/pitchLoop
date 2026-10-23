@@ -4,6 +4,28 @@ import sessionModule from "@/module/session";
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import { connectDB } from "@/lib/db";
+import * as z from "zod";
+import { objectId, isValidId, validate } from "@/lib/validate";
+
+const generateSchema = z.object({
+  skillName: z.string().min(1, "Missing skill name").max(200),
+  sessionId: objectId,
+  whyItMatters: z.string().max(2000).optional(),
+  whatHappened: z.string().max(2000).optional(),
+  personaId: objectId.optional(),
+});
+
+const evaluateSchema = z.object({
+  scenario: z.string().min(1, "Missing scenario").max(5000),
+  sellerAnswer: z
+    .string()
+    .min(1, "Write an answer first")
+    .max(5000, "Keep your answer under 5000 characters"),
+  skillName: z.string().min(1, "Missing skill name").max(200),
+  sessionId: objectId,
+  attemptNumber: z.number().optional(),
+  personaId: objectId.optional(),
+});
 
 const client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
@@ -23,14 +45,23 @@ export async function GET(req) {
     await connectDB();
     const sessionId = req.nextUrl.searchParams.get("sessionId");
 
-    if (!sessionId) {
+    if (!isValidId(sessionId)) {
       return NextResponse.json(
-        { success: false, error: "Missing session ID" },
+        { success: false, error: "Invalid session ID" },
         { status: 400 },
       );
     }
 
-    const session = await sessionModule.findById(sessionId);
+    const userAuth = await getUser();
+
+    if (!userAuth || !userAuth.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const session = await sessionModule.findOne({
+      _id: sessionId,
+      userId: userAuth.user.id,
+    });
 
     if (!session) {
       return NextResponse.json(
@@ -40,7 +71,6 @@ export async function GET(req) {
     }
 
     const practice = session.practice;
-    console.log(session.coaching);
 
     if (!practice || !practice.scenario) {
       return NextResponse.json({
@@ -80,18 +110,15 @@ export async function POST(req) {
     const action = body?.action;
 
     if (action === "generate") {
+      const { data, error } = validate(generateSchema, body);
+      if (error) return error;
       const { skillName, whyItMatters, whatHappened, sessionId, personaId } =
-        body;
+        data;
 
-      if (!skillName || !sessionId) {
-        return NextResponse.json(
-          { success: false, error: "Missing skill or session ID" },
-          { status: 400 },
-        );
-      }
-      const session = await sessionModule.findById(sessionId);
-      session.practice.skillName = skillName;
-      await session.save();
+      const session = await sessionModule.findOne({
+        _id: sessionId,
+        userId: userAuth.user.id,
+      });
 
       if (!session) {
         return NextResponse.json(
@@ -99,6 +126,8 @@ export async function POST(req) {
           { status: 404 },
         );
       }
+      session.practice.skillName = skillName;
+      await session.save();
       session.practice.skillName = skillName;
       session.practice.attempts = 0;
       session.practice.completed = false;
@@ -272,7 +301,6 @@ No extra text.`,
 
       const cleanedReply = cleanJsonResponse(reply);
       const parsed = JSON.parse(cleanedReply);
-      console.log("scenario", parsed);
       session.practice.scenario = parsed.scenario;
       await session.save();
       return NextResponse.json({
@@ -283,6 +311,8 @@ No extra text.`,
     }
 
     if (action === "evaluate") {
+      const { data, error } = validate(evaluateSchema, body);
+      if (error) return error;
       const {
         scenario,
         sellerAnswer,
@@ -290,16 +320,12 @@ No extra text.`,
         skillName,
         sessionId,
         personaId,
-      } = body;
+      } = data;
 
-      if (!scenario || !sellerAnswer || !skillName || !sessionId) {
-        return NextResponse.json(
-          { success: false, error: "Missing evaluation details" },
-          { status: 400 },
-        );
-      }
-
-      const session = await sessionModule.findById(sessionId);
+      const session = await sessionModule.findOne({
+        _id: sessionId,
+        userId: userAuth.user.id,
+      });
 
       if (!session) {
         return NextResponse.json(
@@ -529,7 +555,6 @@ No additional fields.
       });
 
       await session.save();
-      console.log("practicessa", parsed);
 
       if (parsed.passed) {
         session.practice.completed = true;
@@ -552,7 +577,6 @@ No additional fields.
       }
       await session.save();
 
-      console.log(session.practice);
 
       if (currentAttempt >= 4) {
         return NextResponse.json({

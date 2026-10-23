@@ -23,7 +23,6 @@ export async function GET(req) {
 
     // console.log(JSON.stringify(msgSession, null, 2));
     const allSession = await sessionModule.findById(userId);
-    console.log("iamallsessionss", sessions);
     // Transform sessions to match frontend requirements
     const formattedSessions = sessions.map((session) => {
       const persona = session.personaId;

@@ -3,13 +3,27 @@ import OpenAI from "openai"; // <- ADD THIS
 import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { isValidId } from "@/lib/validate";
 
 export async function GET(req) {
   await connectDB();
   const sessionId = req.nextUrl.searchParams.get("sessionId");
+  if (!isValidId(sessionId)) {
+    return NextResponse.json({ error: "Invalid session ID" }, { status: 400 });
+  }
 
-  const session = await sessionModule.findById(sessionId);
-  console.log(session.messages);
+  const userAuth = await getUser();
+  if (!userAuth || !userAuth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const session = await sessionModule.findOne({
+    _id: sessionId,
+    userId: userAuth.user.id,
+  });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
 
   return NextResponse.json({ session: session.feedback });
 }
@@ -17,9 +31,21 @@ export async function GET(req) {
 export async function POST(req) {
   await connectDB();
   const { id, input } = await req.json();
-  const fetchUser = await getUser();
+  const userAuth = await getUser();
+  if (!userAuth || !userAuth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isValidId(id)) {
+    return NextResponse.json({ error: "Invalid session ID" }, { status: 400 });
+  }
 
-  const session = await sessionModule.findById(id);
+  const session = await sessionModule.findOne({
+    _id: id,
+    userId: userAuth.user.id,
+  });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
 
   const onlyMessages = session.messages.map((message) => ({
     role: message.role,
@@ -222,7 +248,6 @@ Return ONLY valid JSON.
 
   await session.save();
 
-  console.log(session.feedback);
 
   return NextResponse.json({ session });
 }

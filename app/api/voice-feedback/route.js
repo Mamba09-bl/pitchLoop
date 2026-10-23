@@ -3,6 +3,7 @@ import sessionModule from "@/module/session";
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import { connectDB } from "@/lib/db";
+import { isValidId } from "@/lib/validate";
 
 export async function GET(req) {
   try {
@@ -12,11 +13,14 @@ export async function GET(req) {
     // const sessionId = searchParams.get("id");
     const sessionId = req.nextUrl.searchParams.get("voiceId");
     const userAuth = await getUser();
+    if (!userAuth || !userAuth.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const callNumberParam = req.nextUrl.searchParams.get("callNumber");
     const userId = userAuth.user.id;
-    if (!sessionId) {
+    if (!isValidId(sessionId)) {
       return NextResponse.json(
-        { success: false, error: "Missing session ID" },
+        { success: false, error: "Invalid session ID" },
         { status: 400 },
       );
     }
@@ -28,7 +32,6 @@ export async function GET(req) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     const session = await sessionModule.findById(sessionId);
-    console.log("i am session", session);
 
     if (!session) {
       return NextResponse.json(
@@ -77,14 +80,23 @@ export async function POST(req) {
     const sessionId = body?.id;
     console.log("VOICE FEEDBACK API HIT");
 
-    if (!sessionId) {
+    if (!isValidId(sessionId)) {
       return NextResponse.json(
-        { success: false, error: "Missing session ID" },
+        { success: false, error: "Invalid session ID" },
         { status: 400 },
       );
     }
 
-    const session = await sessionModule.findById(sessionId);
+    const userAuth = await getUser();
+
+    if (!userAuth || !userAuth.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const session = await sessionModule.findOne({
+      _id: sessionId,
+      userId: userAuth.user.id,
+    });
 
     if (!session) {
       return NextResponse.json(
@@ -514,8 +526,6 @@ Do not include commentary before or after the JSON.
       );
     }
 
-    console.log(response);
-    console.log("feedbackk", feedback);
 
     feedback.callOutcome = feedback.callOutcome || {};
     feedback.callOutcome.goal =
@@ -552,7 +562,6 @@ Do not include commentary before or after the JSON.
     session.markModified("voiceCallFeedback");
     await session.save();
 
-    console.log("VOICE FEEDBACK RESULT:", feedback);
 
     return NextResponse.json({
       success: true,

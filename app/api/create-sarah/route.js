@@ -2,14 +2,18 @@ import personasModule from "@/module/persona";
 
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { isAdmin } from "@/lib/isAdmin";
 
-export async function GET(req) {
+// Admin only: creates Sarah Mitchell if she doesn't exist yet
+export async function POST(req) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   await connectDB();
   const existingPersona = await personasModule.findOne({
     name: "Sarah Mitchell",
   });
 
-  console.log(existingPersona);
   if (existingPersona) {
     return NextResponse.json({
       persona: existingPersona,

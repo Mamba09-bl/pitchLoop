@@ -5,6 +5,7 @@ import userModule from "@/module/signup";
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import { connectDB } from "@/lib/db";
+import { isValidId } from "@/lib/validate";
 
 const grook = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
@@ -260,9 +261,15 @@ export async function POST(req) {
   if (!userAuth || !userAuth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!isValidId(id) || (personaId && !isValidId(personaId))) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const userId = userAuth.user.id;
   const user = await userModule.findById(userId);
-  const session = await sessionModule.findById(id);
+  const session = await sessionModule.findOne({ _id: id, userId });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
   const persona = await personaModule.findById(personaId);
   if (session.checkCallNumber < 2) {
     return NextResponse.json(
@@ -277,7 +284,6 @@ export async function POST(req) {
   if (id) {
     try {
       const evaluation = await evaluateFullConversation(session);
-      console.log("responseaw", evaluation);
 
       // Save coaching evaluation to session
       session.coaching = evaluation;
@@ -362,23 +368,22 @@ export async function GET(req) {
     await connectDB();
     const sessionId = req.nextUrl.searchParams.get("sessionId");
 
-    if (!sessionId) {
+    if (!isValidId(sessionId)) {
       return NextResponse.json(
-        { success: false, error: "Missing session ID" },
+        { success: false, error: "Invalid session ID" },
         { status: 400 },
       );
     }
     const userAuth = await getUser();
+    if (!userAuth || !userAuth.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const userId = userAuth.user.id;
 
-    const session = await sessionModule.findById(sessionId);
-    const ownId = await sessionModule.findOne({
+    const session = await sessionModule.findOne({
       userId: userId,
       _id: sessionId,
     });
-    if (!ownId) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Session not found" },
@@ -396,11 +401,7 @@ export async function GET(req) {
         { status: 403 },
       );
     }
-    if (!userAuth || !userAuth.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     const user = await userModule.findById(userId);
-    console.log("zaaza", session.feedback);
 
     return NextResponse.json({
       success: true,

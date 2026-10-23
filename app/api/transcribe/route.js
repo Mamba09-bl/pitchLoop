@@ -6,6 +6,18 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import { PersonStanding } from "lucide-react";
 import { connectDB } from "@/lib/db";
+import * as z from "zod";
+import { objectId, isValidId, validate } from "@/lib/validate";
+
+// Whisper's own upload limit is 25 MB
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
+const transcribeSchema = z.object({
+  id: objectId,
+  sessionId: objectId,
+  text: z.string().max(5000, "Answer is too long"),
+  buyerMessage: z.string().max(5000).nullish(),
+});
 
 function buildInstructions(persona, session, verboseInstructions) {
   const currentStage = session.currentStage;
@@ -797,23 +809,19 @@ export async function GET(req) {
   await connectDB();
   const sessionId = req.nextUrl.searchParams.get("sessionId");
   const userAuth = await getUser();
-  const userId = userAuth.user.id;
-  const userIds = userAuth.user.id;
-  const session = await sessionModule.findById(sessionId);
-  const persona = await personaModule.findById(session?.personaId);
-  const user = await userModule.findById(userId);
-  const ownId = await sessionModule.findOne({ userId: userId });
-  if (!ownId) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-  console.log("idsss", ownId);
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
-
   if (!userAuth || !userAuth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!isValidId(sessionId)) {
+    return NextResponse.json({ error: "Invalid session ID" }, { status: 400 });
+  }
+  const userId = userAuth.user.id;
+  const session = await sessionModule.findOne({ _id: sessionId, userId });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
+  const persona = await personaModule.findById(session.personaId);
+  const user = await userModule.findById(userId);
 
   // if (session.status === "completed") {
   //   return NextResponse.json({
@@ -876,6 +884,31 @@ export async function POST(req) {
       latestBuyerMessage = formData.get("buyerMessage");
     }
 
+    const { error: inputError } = validate(transcribeSchema, {
+      id,
+      sessionId,
+      text: transcriptText,
+      buyerMessage: latestBuyerMessage,
+    });
+    if (inputError) return inputError;
+
+    if (file && (typeof file === "string" || file.size > MAX_AUDIO_BYTES)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid or too large audio file" },
+        { status: 400 },
+      );
+    }
+
+    // Check ownership before any paid AI call
+    const session = await sessionModule.findOne({ _id: sessionId, userId });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Session not found" },
+        { status: 404 },
+      );
+    }
+
     let transcript = null;
 
     if (file) {
@@ -894,27 +927,12 @@ export async function POST(req) {
       throw new Error("No transcript provided");
     }
 
-    if (!sessionId) {
-      return NextResponse.json(
-        { success: false, error: "Missing session ID" },
-        { status: 400 },
-      );
-    }
-
-    const session = await sessionModule.findById(sessionId);
     const persona = await personaModule.findById(id);
     const user = await userModule.findById(userId);
 
     // if (user.checkLimit.count >= 3) {
     //   return Response.json({ limitReached: true }, { status: 429 });
     // }
-
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Session not found" },
-        { status: 404 },
-      );
-    }
 
     if (!persona) {
       return NextResponse.json(
@@ -1091,17 +1109,6 @@ If the extra detail was necessary to answer the question well, return:
       .trim();
 
     const evaluation = JSON.parse(cleanedReply);
-
-    console.log(cleanedReply);
-
-    console.log(evaluation);
-
-    console.log("EVALUATIONn INPUT:", {
-      currentStage,
-      latestBuyerMessage,
-      sellerAnswer: transcript.text,
-      salesGoal: session.salesGoal,
-    });
 
     // for memory
     session.conversationMemory.discussedTopics = [

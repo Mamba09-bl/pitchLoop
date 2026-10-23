@@ -8,8 +8,23 @@ import { getUser } from "@/lib/getUser";
 
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import * as z from "zod";
+import { objectId, validate } from "@/lib/validate";
 
 const MAX_SESSIONS_PER_DAY = 2;
+
+const contextField = z
+  .string()
+  .max(2000, "Keep each answer under 2000 characters.")
+  .optional();
+
+const startSessionSchema = z.object({
+  id: objectId,
+  sellingProduct: contextField,
+  salesGoal: contextField,
+  targetPain: contextField,
+  mode: z.string().max(20).optional(),
+});
 
 export async function GET() {
   await connectDB();
@@ -49,7 +64,8 @@ export async function POST(req) {
     return NextResponse.json(
       {
         success: false,
-        error: "Something went wrong while starting the session. Please try again.",
+        error:
+          "Something went wrong while starting the session. Please try again.",
       },
       { status: 500 },
     );
@@ -58,17 +74,27 @@ export async function POST(req) {
 
 async function handleStartSession(req) {
   await connectDB();
-  const { id, sellingProduct, salesGoal, targetPain } = await req.json();
+  const body = await req.json();
   const fetchUser = await getUser();
-  console.log("i am value", sellingProduct);
 
-  const trimmedSellingProduct = sellingProduct?.trim();
-  const trimmedSalesGoal = salesGoal?.trim();
-  const trimmedTargetPain = targetPain?.trim();
   const userAuth = await getUser();
   if (!userAuth || !userAuth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { data, message } = validate(startSessionSchema, body);
+  if (!data) {
+    // The pre-call form shows `reason` to the user
+    return NextResponse.json(
+      { success: false, valid: false, reason: message },
+      { status: 400 },
+    );
+  }
+  const { id, sellingProduct, salesGoal, targetPain } = data;
+
+  const trimmedSellingProduct = sellingProduct?.trim();
+  const trimmedSalesGoal = salesGoal?.trim();
+  const trimmedTargetPain = targetPain?.trim();
   const userId = userAuth.user.id;
 
   const user = await userModule.findById(userId);
@@ -312,7 +338,6 @@ ${trimmedSalesGoal}
       .replace(/```/g, "")
       .trim();
     const parsedValidation = JSON.parse(cleanedResponse);
-    console.log(parsedValidation);
 
     validationResult = {
       valid: parsedValidation.valid === true,
@@ -438,7 +463,6 @@ ${trimmedSalesGoal}
     ],
   });
 
-  console.log("personashow", createSession);
 
   return NextResponse.json({ sessionId: createSession._id });
 }

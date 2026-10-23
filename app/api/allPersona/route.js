@@ -6,11 +6,13 @@ import { connectDB } from "@/lib/db";
 
 export async function GET(req) {
   await connectDB();
-  const findPersona = await personasModule.find();
   const userAuth = await getUser();
+  if (!userAuth || !userAuth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const findPersona = await personasModule.find();
   const userId = userAuth.user.id;
   const user = await userModule.findById(userId);
-  console.log(user);
 
   return NextResponse.json({ persona: findPersona });
 }
